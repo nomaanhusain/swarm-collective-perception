@@ -16,6 +16,7 @@ import itertools
 from .innate import Innate
 from .learning import Learning
 import time
+import numpy as np
 from .constants import *
 
 
@@ -99,13 +100,19 @@ class Processing():
         positionX = self.agent.body.rect.centerx
         positonY = self.agent.body.rect.centery
 
+        # if(self.agent.ID == 1):
+        #     if(self.agent.state == STATE_EXPLORATION and self.agent.Qi < 0.5):
+        #         print(f"State Exploration, qi = {self.agent.Qi}. ExploreTime = {self.state_timestep_counter}. Exp_State = {self.agent.exp_state}")
+        #     if(self.agent.state == STATE_DESSEMINATION and self.agent.Qi < 0.5):
+        #         print(f"State Dessimation, qi = {self.agent.Qi}. DessTime = {self.state_timestep_counter}. Exp_State = {self.agent.exp_state}")
+
         if(not self.exploration_time_calculated):
             self.state_timestep_counter = self.calculateExplorationTime() * FRAMES_PER_SEC
-            self.calculateExplorationTime = True
+            self.exploration_time_calculated = True
         
         if(not self.dessimation_time_calculated):
             self.state_timestep_counter = self.calculateDessiminationTime() * FRAMES_PER_SEC
-            self.calculateDessiminationTime = True
+            self.dessimation_time_calculated = True
         #When in exploration state
         if(self.agent.state == STATE_EXPLORATION):
             self.state_timestep_counter -= 1
@@ -113,38 +120,47 @@ class Processing():
             localRects = self.agent.environment.rectList
             for r in range(0,len(localRects)):
                 if (localRects[r].collidepoint(positionX, positonY)):
-                    #TODO do exploration calculation stuff
                     if not r in self.visitedCellSet:
                         self.visitedCellSet.add(r)
                         self.Ti+=1
                         color_from_sensor = self.agent.environment.displaySurface.get_at((int(positionX) , int(positonY)+10)) #added 10 as height of robot is 10, it looks just infront of it.
-                        colr_opinion = self.getColorOpinion(color_from_sensor)
+                        colr_opinion = self.getColorOpinion(color_from_sensor) #returns color option
                         # print(f"color = {color_from_sensor}, opinion = {colr_opinion}")
+
+                        #If grid collor same as agent opinion increase Ci
                         if colr_opinion == self.agent.color_opinion:
                             self.Ci+=1
                         
                     #print(f"Rect ID = {r}")
                     break
-            
+            #End of exploration phase
             if(self.state_timestep_counter == 0):
                 if(self.agent.exp_state == EXP_SELF_SOURCING):
                     qi = min(1, (2*self.Ci)/self.Ti)
+                    # if(self.agent.ID == 1):
+                    #     print(f"Calculated qi = {qi} Ci = {self.Ci} Ti = {self.Ti}")
                     if qi >= 0.5:
                         self.agent.Qi = 1
                     else:
                         self.agent.Qi = qi
                 self.dessimation_time_calculated = False
                 self.exploration_time_calculated = True
+                self.visitedCellSet.clear()
                 self.Ti = 0
                 self.Ci = 0
                 self.agent.state = STATE_DESSEMINATION
+                
         
         if(self.agent.state == STATE_DESSEMINATION):
             self.state_timestep_counter -= 1
+            #TODO dessimination stuff
 
 
 
+            #End of dessimation phase
             if(self.state_timestep_counter == 0):
+                #At the end of dessimination state robot decides to either go to polling or self sourcing
+                self.agent.exp_state = np.random.choice([EXP_SELF_SOURCING,EXP_POLLING],p=[PROBABILITY_N, 1 - PROBABILITY_N])
                 self.dessimation_time_calculated = True
                 self.exploration_time_calculated = False
                 self.agent.state = STATE_EXPLORATION
@@ -184,6 +200,7 @@ class Processing():
     #     else:
     #         self.agent.processing.state["carries token"] = 0
     
+    # Returns the color choice from the two colors
     def getColorOpinion(self,x):
         if(x == (242,245,66)):
             return 0

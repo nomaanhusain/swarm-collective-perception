@@ -25,8 +25,11 @@ from .constants import *
 # =============================================================================
 class Processing():
 
-    TIME_STEP_COUNTER = 0
-    TURN_TIMESTEP_COUNTER = 0
+    time_step_counter = 0
+    turn_timestep_counter = 0
+    state_timestep_counter = 0
+    exploration_time_calculated = False
+    dessimation_time_calculated = True
     """
     In the processing object all computation procedures of an agent are represented.
     
@@ -96,10 +99,17 @@ class Processing():
         positionX = self.agent.body.rect.centerx
         positonY = self.agent.body.rect.centery
 
-
+        if(not self.exploration_time_calculated):
+            self.state_timestep_counter = self.calculateExplorationTime() * FRAMES_PER_SEC
+            self.calculateExplorationTime = True
+        
+        if(not self.dessimation_time_calculated):
+            self.state_timestep_counter = self.calculateDessiminationTime() * FRAMES_PER_SEC
+            self.calculateDessiminationTime = True
         #When in exploration state
         if(self.agent.state == STATE_EXPLORATION):
-            # print(self.agent.environment.displaySurface.get_at((int(positionX) , int(positonY)+10))) #added 10 as height of robot is 10, it looks just infront of it.
+            self.state_timestep_counter -= 1
+            
             localRects = self.agent.environment.rectList
             for r in range(0,len(localRects)):
                 if (localRects[r].collidepoint(positionX, positonY)):
@@ -107,7 +117,7 @@ class Processing():
                     if not r in self.visitedCellSet:
                         self.visitedCellSet.add(r)
                         self.Ti+=1
-                        color_from_sensor = self.agent.environment.displaySurface.get_at((int(positionX) , int(positonY)+10))
+                        color_from_sensor = self.agent.environment.displaySurface.get_at((int(positionX) , int(positonY)+10)) #added 10 as height of robot is 10, it looks just infront of it.
                         colr_opinion = self.getColorOpinion(color_from_sensor)
                         # print(f"color = {color_from_sensor}, opinion = {colr_opinion}")
                         if colr_opinion == self.agent.color_opinion:
@@ -115,29 +125,53 @@ class Processing():
                         
                     #print(f"Rect ID = {r}")
                     break
+            
+            if(self.state_timestep_counter == 0):
+                if(self.agent.exp_state == EXP_SELF_SOURCING):
+                    qi = min(1, (2*self.Ci)/self.Ti)
+                    if qi >= 0.5:
+                        self.agent.Qi = 1
+                    else:
+                        self.agent.Qi = qi
+                self.dessimation_time_calculated = False
+                self.exploration_time_calculated = True
+                self.Ti = 0
+                self.Ci = 0
+                self.agent.state = STATE_DESSEMINATION
+        
+        if(self.agent.state == STATE_DESSEMINATION):
+            self.state_timestep_counter -= 1
 
-            if(self.agent.ID == 1):
-                print(f"Ci = {self.Ci} and Ti = {self.Ti}")
+
+
+            if(self.state_timestep_counter == 0):
+                self.dessimation_time_calculated = True
+                self.exploration_time_calculated = False
+                self.agent.state = STATE_EXPLORATION
+
+
+              
+            
 
             
 
 
         #Rotation Phase for 5 sec
-        if(self.TURN_TIMESTEP_COUNTER > FRAMES_PER_SEC * 5):
-            self.TIME_STEP_COUNTER = 0
-            self.TURN_TIMESTEP_COUNTER = 0
+        if(self.turn_timestep_counter > FRAMES_PER_SEC * 5):
+            self.time_step_counter = 0
+            self.turn_timestep_counter = 0
         
         #Move Straight for 10 sec
-        if(self.TIME_STEP_COUNTER < FRAMES_PER_SEC * 10):
+        if(self.time_step_counter < FRAMES_PER_SEC * 10):
             
             # --- innate behaviour ---
             self.innate.communicate()   
             self.innate.explore()
             self.innate.forage()
-            self.TIME_STEP_COUNTER += 1
+            self.time_step_counter += 1
         else:
             self.innate.turn()
-            self.TURN_TIMESTEP_COUNTER += 1
+            self.turn_timestep_counter += 1
         
         # --- learning procedure ---
         #self.learning.rl_qLearning()
@@ -157,3 +191,15 @@ class Processing():
             return 1
         else:
             return -1
+        
+    def calculateExplorationTime(self):
+        if(self.agent.color_opinion == UNCOMMITED_OPTION):
+            return int(0.5 * 400 * 32 * 0.001)
+        else:
+            return 100
+
+    def calculateDessiminationTime(self):
+        if(self.agent.color_opinion == UNCOMMITED_OPTION):
+            return int(0.5 * 400 * 32 * 0.001)
+        else:
+            return int(self.agent.Qi * 1300 * 32 * 0.001)

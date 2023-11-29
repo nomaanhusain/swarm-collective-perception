@@ -114,7 +114,10 @@ class Experiment():
         count = 0
         while count < numberOfAgents:
             # the agent list is added by reference not by value --> agents have at the end a complete list of all agents
-            newAgent = Agent(count+1, [random.randint(10, w-10), random.randint(10, h-10)], random.randint(0, 360), environment, agentList, sourceList, sinkList, obstacleList, xParams, np.random.choice([OPINION_A, OPINION_B],p=[PERCENTAGE_COLOR_A, PERCENTAGE_COLOR_B]))
+            newAgent = Agent(count+1, [random.randint(10, w-10), random.randint(10, h-10)], random.randint(0, 360), 
+                             environment, agentList, sourceList, sinkList, obstacleList, xParams, 
+                             np.random.choice([COMMITED_OPINION_A,COMMITED_OPINION_B],p=[PERCENTAGE_COLOR_A, PERCENTAGE_COLOR_B]),
+                             np.random.choice([EXP_SELF_SOURCING,EXP_POLLING],p=[PROBABILITY_N, 1 - PROBABILITY_N]))
             positonAvailable = not newAgent.perception.collisionSensor()
             if(positonAvailable):
                 count = count + 1

@@ -47,7 +47,7 @@ class Agent():
         nesting     (nesting.py):      represents the micro-macro-link
     """
 
-    def __init__(self, i, p, d, e, a, c, s, o, x, initialOpinion):
+    def __init__(self, i, p, d, e, a, c, s, o, x, initialOpinion, exp_init_state):
         """
         Initialize agent object.
         """
@@ -58,6 +58,8 @@ class Agent():
         self.ID = i
         self.state = STATE_EXPLORATION
         self.color_opinion = initialOpinion
+        self.Qi = 1
+        self.exp_state = exp_init_state
 
         # environment and other objects. This variables are only needed for simulation calculations and are not needed from the agents point of view
         self.environment = e

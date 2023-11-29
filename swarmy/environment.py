@@ -67,7 +67,7 @@ class Environment():
         #TODO: Make this a 2d datastucture with some id, as the robot needs to know the id of the cell, also agent as postion array so it knows where it is
         # create a array with a number denoting the choice of color at random
         for i in range(0,colorGridCount+1):
-            randomChoice = np.random.choice([OPINION_A, OPINION_B],p=[PERCENTAGE_COLOR_A, PERCENTAGE_COLOR_B])
+            randomChoice = np.random.choice([COMMITED_OPINION_A, COMMITED_OPINION_B],p=[PERCENTAGE_COLOR_A, PERCENTAGE_COLOR_B])
             self.gridColorList.append(randomChoice)
         # add wall
         

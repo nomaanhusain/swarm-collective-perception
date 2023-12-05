@@ -93,7 +93,7 @@ class Body():
         # use precalculated rotations and add position vector
         for p in polyRotatedLookUp[self.agent.actuation.angle-1]:
             self.polyCur.append(p + self.agent.actuation.position)
-        self.agent.environment.dynamicPolyList.append([self.COLOR, self.polyCur, 3])
+        self.agent.environment.dynamicPolyList.append([self.COLOR, self.polyCur, 3, self.agent.color_opinion])
 
         # --- Old Approach without lookup table ---
         # rotate polygon according to current angle and add position vector

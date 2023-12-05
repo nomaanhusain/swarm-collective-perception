@@ -64,8 +64,6 @@ class Environment():
         colorGridCount = (math.ceil(self.width/self.colorBlockSize)*math.ceil(self.height/self.colorBlockSize))
         print("grid count = ",colorGridCount)
         
-        #TODO: Make this a 2d datastucture with some id, as the robot needs to know the id of the cell, also agent as postion array so it knows where it is
-        # create a array with a number denoting the choice of color at random
         for i in range(0,colorGridCount+1):
             randomChoice = np.random.choice([COMMITED_OPINION_A, COMMITED_OPINION_B],p=[PERCENTAGE_COLOR_A, PERCENTAGE_COLOR_B])
             self.gridColorList.append(randomChoice)
@@ -121,7 +119,12 @@ class Environment():
                       
         # draw dynamic polygons (agents)
         for x in self.dynamicPolyList:
-            pygame.draw.polygon(self.displaySurface, (255,255,255), x[1]) # fill the polygon
+            color_for_agent = (255,255,255)
+            if(x[3] == 0):
+                color_for_agent = (242,245,66)
+            if(x[3] == 1):
+                color_for_agent = (48,138,255)
+            pygame.draw.polygon(self.displaySurface, color_for_agent, x[1]) # fill the polygon
             pygame.draw.polygon(self.displaySurface, x[0], x[1], 3)
             #pygame.draw.aalines(self.displaySurface, x[0], True, x[1])   
             

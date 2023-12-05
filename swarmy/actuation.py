@@ -88,7 +88,7 @@ class Actuation():
                 
             # choose rotation duration    
             self.turnDuration = int(abs(angle)/self.ANGLE_VELOCITY)
-            print("Duration: " + str(self.turnDuration))
+            #print("Duration: " + str(self.turnDuration))
 
 
     def turn(self):

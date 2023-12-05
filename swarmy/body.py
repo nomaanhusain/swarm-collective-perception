@@ -40,7 +40,7 @@ class Body():
         # constants
         self.WIDTH = 10                 # agent body width
         self.HEIGHT = 10                # agent body height
-        self.COLOR = (0,90,90)          # turquoise
+        self.COLOR = (33,33,33)          # turquoise
         self.TOKEN_COLOR = (181,111,0)  # orange 
         self.BOUNDING = round(np.hypot(self.WIDTH, self.HEIGHT))+20
         

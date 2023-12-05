@@ -26,4 +26,4 @@ captFolderPath = os.getcwd() + "\\capture\\"
 
 exp1 = Experiment()
 
-measFilePath = exp1.run(50, 1, measFolderPath, captFolderPath, [-60, True])
+measFilePath = exp1.run(100, 1, measFolderPath, captFolderPath, [-60, True])

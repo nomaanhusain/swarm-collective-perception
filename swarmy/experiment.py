@@ -290,6 +290,15 @@ class Experiment():
         print("Discarded all tokens in sink: " + str(timesteps_allTokensInSink) + " steps")
         print("Collisions per agent: " + str(round((totalCollisions_counter/numberOfAgents),2)))     # collisions per agent        
         print("Simulation terminated!")
+        cnt_a = 0
+        cnt_b = 0
+        cnt_u = 0
+        for agent in agentList:
+            if(agent.color_opinion == 0): cnt_a+=1
+            if(agent.color_opinion == 1): cnt_b+=1
+            if(agent.color_opinion == 2): cnt_u+=1            
+                    
+        print(f"Cnt Opinion A = {cnt_a}. Cnt Opinion B = {cnt_b}. Cnt Opinion undecided = {cnt_u}")
 
         # DEBUG
         # print q-tables for each agent

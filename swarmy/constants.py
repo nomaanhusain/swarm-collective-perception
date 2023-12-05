@@ -19,7 +19,7 @@ STATE_DESSEMINATION = 4
 EXP_SELF_SOURCING = 5
 EXP_POLLING = 6
 
-PERCENTAGE_COLOR_A = 0.5 #the percentage of the grid you want to be of color 1
-PERCENTAGE_COLOR_B = 0.5 #the percentage of the grid you want to be of color 2
+PERCENTAGE_COLOR_A = 0.7 #the percentage of the grid you want to be of color 1
+PERCENTAGE_COLOR_B = 0.3 #the percentage of the grid you want to be of color 2
 FRAMES_PER_SEC = 60
 PROBABILITY_N = 0.05

@@ -17,6 +17,8 @@ from .innate import Innate
 from .learning import Learning
 import time
 import numpy as np
+import random
+import math
 from .constants import *
 
 
@@ -46,6 +48,8 @@ class Processing():
         self.Ti = 0
         self.Ci = 0
         self.qi = 0.0
+        self.straightMovementTimeDetermined = False
+        self.straightMoveDuration = 5
         self.visitedCellSet = set()
         
         # current agent state
@@ -91,8 +95,11 @@ class Processing():
         
         # control the agent with ID=1 via keyboard
         #if(self.agent.ID == 1):
-        self.agent.actuation.processUserInput(pressedKeys)         
+        self.agent.actuation.processUserInput(pressedKeys)     
         start_time = 0
+        if not self.straightMovementTimeDetermined:
+            self.straightMoveDuration = random.randrange(8,12)
+            self.straightMovementTimeDetermined = True
         # --- self monitoring ---
         # self.selfMonitoring()
 
@@ -135,6 +142,68 @@ class Processing():
                     break
             #End of exploration phase
             if(self.state_timestep_counter == 0):
+                #TODO check if current agent is in exploration state and polling state 
+                # Calculate distance of current agent to all other agent and if in range and other agent in dessimination state, get its 
+                #opinion, if different from current agent opinion, go undecided. 
+                #If our agent is undecided then get opinion of neighbor by majority rule
+
+                if(self.agent.exp_state == EXP_POLLING):
+                    agentList = self.agent.agents
+                    neighbourList = list()
+                    for a in agentList:
+                        if(a.state == STATE_DESSEMINATION):
+                            nXPos = a.body.rect.centerx
+                            nYPos = a.body.rect.centery
+                            eqDist = self.calculateEquladianDistance(positionX,nXPos,positonY,nYPos)
+                            if(eqDist < 150):
+                                neighbourList.append(a)
+
+                    if(len(neighbourList)!=0):
+                        cnt_op_A = 0
+                        cnt_op_B = 0
+                        cnt_undicided = 0
+                        final_opinion = -1
+                        for n in neighbourList:
+                            if(n.color_opinion == COMMITED_OPINION_A):
+                                cnt_op_A+=1
+                            if(n.color_opinion == COMMITED_OPINION_B):
+                                cnt_op_B+=1
+                            if(n.color_opinion == UNCOMMITED_OPTION):
+                                cnt_undicided+=1
+
+                        # we see the majority of these three values and take that as the opinion we want, if same cnt then choose randomly
+                        if(cnt_op_A > cnt_op_B and cnt_op_A > cnt_undicided):
+                            final_opinion = COMMITED_OPINION_A
+                        if(cnt_op_B > cnt_op_A and cnt_op_B > cnt_undicided):
+                            final_opinion = COMMITED_OPINION_B
+                        if(cnt_undicided > cnt_op_A and cnt_undicided > cnt_op_B):
+                            final_opinion = UNCOMMITED_OPTION
+                        if(cnt_op_A == cnt_op_B and cnt_op_A > cnt_undicided):
+                            final_opinion = np.random.choice([COMMITED_OPINION_A,COMMITED_OPINION_B])
+                        if(cnt_op_A == cnt_undicided and cnt_op_A > cnt_op_B):
+                            final_opinion = np.random.choice([COMMITED_OPINION_A,UNCOMMITED_OPTION])
+                        if(cnt_op_B == cnt_undicided and cnt_op_B > cnt_op_A):
+                            final_opinion = np.random.choice([COMMITED_OPINION_B,UNCOMMITED_OPTION])
+                        if(cnt_op_A == cnt_op_B and cnt_op_A == cnt_undicided):
+                            final_opinion == np.random.choice([COMMITED_OPINION_A,COMMITED_OPINION_B,UNCOMMITED_OPTION])
+                        
+                        prevOp = self.agent.color_opinion
+
+                        #If not same as self, become undecided
+                        if(self.agent.color_opinion != final_opinion and self.agent.color_opinion != UNCOMMITED_OPTION):
+                            print("Going uncommited")
+                            self.agent.color_opinion = UNCOMMITED_OPTION
+                        #if uncommided, take the majority opinion
+                        else:
+                            print("taking an opinion")
+                            self.agent.color_opinion = final_opinion
+
+                        print(f" for agent {self.agent.ID} Opinion Updated from {prevOp} to {self.agent.color_opinion}")
+
+
+                       
+
+
                 if(self.agent.exp_state == EXP_SELF_SOURCING):
                     qi = min(1, (2*self.Ci)/self.Ti)
                     # if(self.agent.ID == 1):
@@ -165,6 +234,10 @@ class Processing():
                 self.exploration_time_calculated = False
                 self.agent.state = STATE_EXPLORATION
 
+        
+        
+
+
 
               
             
@@ -172,13 +245,10 @@ class Processing():
             
 
 
-        #Rotation Phase for 5 sec
-        if(self.turn_timestep_counter > FRAMES_PER_SEC * 5):
-            self.time_step_counter = 0
-            self.turn_timestep_counter = 0
+            
         
         #Move Straight for 10 sec
-        if(self.time_step_counter < FRAMES_PER_SEC * 10):
+        if(self.time_step_counter < FRAMES_PER_SEC * self.straightMoveDuration):
             
             # --- innate behaviour ---
             self.innate.communicate()   
@@ -187,7 +257,9 @@ class Processing():
             self.time_step_counter += 1
         else:
             self.innate.turn()
-            self.turn_timestep_counter += 1
+            self.time_step_counter = 0
+            self.turn_timestep_counter = 0
+            self.straightMovementTimeDetermined = False
         
         # --- learning procedure ---
         #self.learning.rl_qLearning()
@@ -220,3 +292,6 @@ class Processing():
             return int(0.5 * 400 * 32 * 0.001)
         else:
             return int(self.agent.Qi * 1300 * 32 * 0.001)
+        
+    def calculateEquladianDistance(self,x1,x2,y1,y2):
+        return math.sqrt((x2-x1)**2 + (y2-y1)**2)

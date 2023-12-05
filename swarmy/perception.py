@@ -318,6 +318,7 @@ class Perception():
         
         # other agents
         for agent in self.agent.agents:
+
             if(self.agent.ID != agent.ID):
                 self.otherAgentRects.append(agent.body.rect)
                 

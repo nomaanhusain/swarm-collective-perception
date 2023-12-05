@@ -8,6 +8,7 @@
 Description:
 This module implements the innate behavior of an agent.
 """
+import random
 
 # =============================================================================
 # Class
@@ -51,7 +52,7 @@ class Innate():
 
     def turn(self):
         if(not self.agent.actuation.turn()):
-            self.agent.actuation.turnRandom()    
+            self.agent.actuation.turnAngle(random.randrange(90,270))    
         
     def forage(self):
         """

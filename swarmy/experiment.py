@@ -28,7 +28,7 @@ import pygame
 import time
 import random
 import numpy as np
-import math
+
 # import internal object classes
 from .environment import Environment
 from .item import Source
@@ -48,8 +48,6 @@ class Experiment():
     def __init__(self):
         super(Experiment, self).__init__()
 
-    def calculateEquladianDistance(self,x1,y1,x2,y2):
-        return math.sqrt((x2-x1)**2 + (y2-y1)**2)
         
     def run(self, numberOfAgents, rendering, measFolderPath, captFolderPath, xParams):
         """
@@ -149,10 +147,7 @@ class Experiment():
             
             #-----------------------------------------------------------------------------
             # ASYNCHRON 
-            #TODO check if current agent is in exploration state and polling state 
-            # Calculate distance of current agent to all other agent and if in range and other agent in dessimination state, get its 
-            #opinion, if different from current agent opinion, go undecided. 
-            #If our agent is undecided then get opinion of neighbor by majority rule
+            
 
 
             # get the set of keys pressed and check for user input

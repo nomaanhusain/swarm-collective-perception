@@ -40,7 +40,7 @@ class Actuation():
         
         # constants
         self.LINEAR_VELOCITY = 2                # choose even number
-        self.ANGLE_VELOCITY = 6                 # choose even number
+        self.ANGLE_VELOCITY = 2                 # choose even number
         self.MAX_NOISE_AMPLITUDE = 1            
         self.MAX_NOISE_DURATION = 7
         self.TURN_DIRECTIONS = [-1, 1]          # 1 = clockwise, -1 = counterclockwise
@@ -65,8 +65,9 @@ class Actuation():
         Choose a random turn angle
         """    
         if(not self.turnInProgress):
+            self.ANGLE_VELOCITY = 6
             self.turnInProgress = True
-            self.turnDuration = random.randint(1,int(180/self.ANGLE_VELOCITY)) # choose the number of rotation steps
+            self.turnDuration = random.randint(1,int(180/(self.ANGLE_VELOCITY))) # choose the number of rotation steps
             self.turnDirection = random.choice(self.TURN_DIRECTIONS) # choose a direction        
     
     
@@ -76,6 +77,7 @@ class Actuation():
         The function turn() will perform the turn steps.
         """        
         if(not self.turnInProgress):
+            self.ANGLE_VELOCITY = 2
             self.turnInProgress = True
             
             # choose number of rotation steps

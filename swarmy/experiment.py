@@ -38,7 +38,9 @@ from .agent import Agent
 from .constants import *
 import os
 import datetime
-
+from collections import deque
+import matplotlib.pyplot as plt
+import csv
 
 # =============================================================================
 # Class
@@ -118,7 +120,8 @@ class Experiment():
             newAgent = Agent(count+1, [random.randint(10, w-10), random.randint(10, h-10)], random.randint(0, 360), 
                              environment, agentList, sourceList, sinkList, obstacleList, xParams, 
                              np.random.choice([COMMITED_OPINION_A,COMMITED_OPINION_B],p=[PERCENTAGE_COLOR_A, PERCENTAGE_COLOR_B]),
-                             np.random.choice([EXP_SELF_SOURCING,EXP_POLLING],p=[PROBABILITY_N, 1 - PROBABILITY_N]))
+                             np.random.choice([EXP_SELF_SOURCING,EXP_POLLING],p=[PROBABILITY_NU, 1 - PROBABILITY_NU]),
+                             np.random.choice([D_DIRECT_SWITCH,D_MAJORITY_RULE],p=[D,1-D]))
             positonAvailable = not newAgent.perception.collisionSensor()
             if(positonAvailable):
                 count = count + 1
@@ -126,9 +129,15 @@ class Experiment():
         
         # -----------------------------------------------------------------------------
         # initializations
-        
+        cntOptAIntit=0
+        cntOptBIntit=0
+        for a in agentList:
+            if a.color_opinion == COMMITED_OPINION_A:
+                cntOptAIntit+=1
+            if a.color_opinion == COMMITED_OPINION_B:
+                cntOptBIntit+=1
+        print(f"Initial Opinion Proportion = {cntOptAIntit/cntOptBIntit}")
         agentList[0].body.helperLUT()   # global lookup table needs to be calculated only once
-        print("Range: " + str(agentList[0].nesting.communication.BROADCASTING_RANGE_MM))
 
         
         # update after all agents were instantiated
@@ -141,13 +150,28 @@ class Experiment():
         # =============================================================================
         locked = [False,False]   # needed to monitor the timesteps for specific events
         time_start = time.time() # simulation start time
-
+        last_values = deque(maxlen=1000)
         while running:
             timesteps_counter += 1        
             
             #-----------------------------------------------------------------------------
             # ASYNCHRON 
             
+            if(timesteps_counter % FRAMES_PER_SEC == 0):
+                #Calculate proportion
+                countA=0
+                countB=0
+                countU=0
+                for a in agentList:
+                    if a.color_opinion == COMMITED_OPINION_A:
+                        countA+=1
+                    if a.color_opinion == COMMITED_OPINION_B:
+                        countB+=1
+                    if a.color_opinion == UNCOMMITED_OPTION:
+                        countU+=1
+                prop = (countA-countB)/(len(agentList) - countU)
+                last_values.append(prop)
+                print(f"Last Values Length = {len(last_values)}. Proportion = {prop}")
 
 
             # get the set of keys pressed and check for user input
@@ -193,26 +217,29 @@ class Experiment():
 
                     # print number of tokens per token type
                     elif event.key == pygame.K_2:
-                        allTokens = []
-                        countTokens = []
-                        for agent in agentList:
-                            for t in agent.nesting.communication.tokens:
-                                allTokens.append(t)  
-                        for x in range(10):        
-                            countTokens.append(allTokens.count("T" + str(x+1)))        
-                        print("Tokens per type: " + str(countTokens))
+                        pass
+                        # allTokens = []
+                        # countTokens = []
+                        # for agent in agentList:
+                        #     for t in agent.nesting.communication.tokens:
+                        #         allTokens.append(t)  
+                        # for x in range(10):        
+                        #     countTokens.append(allTokens.count("T" + str(x+1)))        
+                        # print("Tokens per type: " + str(countTokens))
                     
                     # print number of tokens per agent
                     elif event.key == pygame.K_3:
-                        countAgentTokens = []
-                        for agent in agentList:
-                            countAgentTokens.append(len(agent.nesting.communication.tokens))
-                        print("Tokens per agent: " + str(countAgentTokens))
+                        pass
+                        # countAgentTokens = []
+                        # for agent in agentList:
+                        #     countAgentTokens.append(len(agent.nesting.communication.tokens))
+                        # print("Tokens per agent: " + str(countAgentTokens))
                       
                     # print number of tokens per agent
                     elif event.key == pygame.K_e:
-                        print("Battery Capcity in mAh: " + str(agentList[0].energy.battery))
-                        print("Steps: " + str(timesteps_counter))
+                        pass
+                        # print("Battery Capcity in mAh: " + str(agentList[0].energy.battery))
+                        # print("Steps: " + str(timesteps_counter))
                     # If the Esc key is pressed, then exit the main loop
                     elif event.key == pygame.K_ESCAPE:
                         running = False
@@ -227,16 +254,8 @@ class Experiment():
             # update agents                                     
             for agent in random.sample(agentList, len(agentList)):
                 agent.processing.perform(pressedKeys)
-                agent.energy.dischargeBatteryOneStep()     
+                # agent.energy.dischargeBatteryOneStep()     
             
-            # DEBUG
-            # print("-------------------------------")
-            # print("Agent " + str(agentList[0].ID))
-            # print("Outgoing " + str(len(agentList[0].nesting.communication.outgoing)))   
-            # print("Incoming " + str(len(agentList[0].nesting.communication.incoming)))
-            # print("Tokens " + str(len(agentList[0].nesting.communication.tokens)))
-            # print("BroadSteps " + str(agentList[0].nesting.communication.remainingBroadcastingSteps))
-            # print("RecMessages " + str(agentList[0].nesting.communication.counterReceivedMessages))
 
             # display results
             if(rendering == 1):          
@@ -245,20 +264,6 @@ class Experiment():
                     #agent.nesting.communication.renderCommRadius()
                 environment.render()     # update content on display
             
-            # tracking statistics
-            # if(source1.getNumberOfTokens() == 0 and not locked[0]):         #tokens in source
-            #     timesteps_allTokensFromSource = timesteps_counter
-            #     locked[0] = True
-             
-            # if(sink1.getNumberOfTokens() == 10 and not locked[1]):          # track tokens in sink
-            #     running = False 
-            #     timesteps_allTokensInSink = timesteps_counter
-            #     time_simulation = round((time.time() - time_start), 2)
-            #     locked[1] = True
-            #     for agent in agentList:
-            #         totalCollisions_counter += agent.processing.monitoring["collisions"]
-            #         totalReceivedMessages_counter += agent.nesting.communication.counterReceivedMessages
-            #         totalBroadcastedMessages_counter += agent.nesting.communication.counterBroadcastedMessages
                     
                      
         # =============================================================================
@@ -296,10 +301,29 @@ class Experiment():
         for agent in agentList:
             if(agent.color_opinion == 0): cnt_a+=1
             if(agent.color_opinion == 1): cnt_b+=1
-            if(agent.color_opinion == 2): cnt_u+=1            
-                    
+            if(agent.color_opinion == 2): cnt_u+=1
+
         print(f"Cnt Opinion A = {cnt_a}. Cnt Opinion B = {cnt_b}. Cnt Opinion undecided = {cnt_u}")
 
+        plt.hist(last_values, bins=50, color='blue', alpha=0.7)
+
+        # Add labels and title
+        plt.xlabel('Value')
+        plt.ylabel('Frequency')
+        plt.title('Histogram of Last 1000 Values')
+        
+        csv_file_path = 'last_values.csv'
+
+        # Write the contents of the deque to the CSV file
+        with open(csv_file_path, 'w', newline='') as csvfile:
+            csv_writer = csv.writer(csvfile)
+
+            # Write the header if needed
+            # csv_writer.writerow(['Value'])  # Uncomment this line if you want a header
+
+            # Write each value in the deque to a new row
+            csv_writer.writerows(map(lambda x: [x], last_values))
+        plt.show()
         # DEBUG
         # print q-tables for each agent
         # for agent in agentList:

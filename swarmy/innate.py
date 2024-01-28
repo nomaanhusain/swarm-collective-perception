@@ -35,7 +35,7 @@ class Innate():
         """   
         self.agent.processing.monitoring["rewards"] += -1         # punishment for just waiting          
     
-    def explore(self):
+    def moveStraight(self):
         """
         Move on or turn if collision detected.
         """           

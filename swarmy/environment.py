@@ -47,7 +47,7 @@ class Environment():
         #self.BACKGROUND_COLOR = (255, 255, 255)    
         self.width = pygame.display.Info().current_w    # testbed width  // self.width = 500
         self.height = pygame.display.Info().current_h   # testbed height // self.height = 300
-        
+        print(f"width = {self.width} and height =  {self.height}")
         # init basic rendering surface
         if(rendering == 1):
             if(self.width == pygame.display.Info().current_w and self.height == pygame.display.Info().current_h):   # fullscreen size
@@ -76,6 +76,19 @@ class Environment():
         self.wall.append(pygame.Rect(0, self.height-wallWidth, self.width, wallWidth))
         self.wall.append(pygame.Rect(self.width-wallWidth, 0, wallWidth, self.height))
         
+
+        #Grid Color Stuff
+        count = 0
+        for x in range(0, self.width, self.colorBlockSize):
+            for y in range(0, self.height, self.colorBlockSize):
+                count+=1
+                rect = pygame.Rect(x, y, self.colorBlockSize, self.colorBlockSize)
+                self.rectList.append(rect)
+                #gridColorList contains 0 or 1 at random at each index.
+                #pygame.draw.rect(self.displaySurface,self.COLORS[self.gridColorList[count]], rect) 
+                
+
+
         # list with objects to be plotted
         self.staticRectList = []
         self.staticCircList = []
@@ -95,15 +108,12 @@ class Environment():
         This method is used to update the whole environment.
         """
         #This is a test, just to see if it works
-        count = 0
+        cnt_render = 0
         for x in range(0, self.width, self.colorBlockSize):
             for y in range(0, self.height, self.colorBlockSize):
-                count+=1
+                cnt_render+=1
                 rect = pygame.Rect(x, y, self.colorBlockSize, self.colorBlockSize)
-                self.rectList.append(rect)
-                #gridColorList contains 0 or 1 at random at each index.
-                #pygame.draw.rect(self.displaySurface,self.COLORS[self.gridColorList[count]], rect) 
-                self.displaySurface.fill(self.COLORS[self.gridColorList[count]],rect=rect)
+                self.displaySurface.fill(self.COLORS[self.gridColorList[cnt_render]],rect=rect)
         #self.drawGrid()
         # draw static rects (items = sources, sinks, obstacles)
         for x in self.staticRectList:
@@ -146,17 +156,6 @@ class Environment():
         pygame.display.flip()                       
         self.forceFramerate()
     
-    
-    # def drawGrid(self):
-        
-    #     count = 0
-        
-    #     for x in range(0, self.width, self.colorBlockSize):
-    #         for y in range(0, self.height, self.colorBlockSize):
-    #             count+=1
-    #             rect = pygame.Rect(x, y, self.colorBlockSize, self.colorBlockSize)
-    #             #gridColorList contains 0 or 1 at random at each index.
-    #             pygame.draw.rect(self.displaySurface,self.COLORS[self.gridColorList[count]], rect)
         
 
        

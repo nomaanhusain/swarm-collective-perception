@@ -157,8 +157,8 @@ class Actuation():
         """
         One step forward.
         """
+        
         self.addNoise()
-
         # calculate the position from the direction and speed and update body position
         self.position[0] += self.direction[0]*self.LINEAR_VELOCITY
         self.position[1] += self.direction[1]*self.LINEAR_VELOCITY

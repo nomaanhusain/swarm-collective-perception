@@ -1,0 +1,17 @@
+
+Test Conditions:
+	1:
+	Noise = 0 (Only Polling)
+	Q = 1.00 (50 50 Split)
+	Decision Prob.= 1.0 (Direct Switch: 100%)
+	
+	Findings:
+		The swarm randomly switches to either decision A or Decision B and then that decision is reinforced more and more and over time all robots go to one decision, I presume
+		this is because there is no negative feedback in the system so once there is a higher number of A or B robot the probability of swithing to that increases and it keeps getting
+		reinforced.
+		
+		
+	2:
+	Noise = 0 (Only Polling)
+	Q = 1.00 (50 50 Split)
+	Decision Prob.= 1.0 (Direct Switch: 100%)

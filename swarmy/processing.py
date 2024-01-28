@@ -100,19 +100,12 @@ class Processing():
         if not self.straightMovementTimeDetermined:
             self.straightMoveDuration = random.randrange(8,12)
             self.straightMovementTimeDetermined = True
-        # --- self monitoring ---
-        # self.selfMonitoring()
+        
 
-        #TODO This is where the count Ti, Ci and qi  calculations, state change algo etc. should go
         positionX = self.agent.body.rect.centerx
         positonY = self.agent.body.rect.centery
 
-        # if(self.agent.ID == 1):
-        #     if(self.agent.state == STATE_EXPLORATION and self.agent.Qi < 0.5):
-        #         print(f"State Exploration, qi = {self.agent.Qi}. ExploreTime = {self.state_timestep_counter}. Exp_State = {self.agent.exp_state}")
-        #     if(self.agent.state == STATE_DESSEMINATION and self.agent.Qi < 0.5):
-        #         print(f"State Dessimation, qi = {self.agent.Qi}. DessTime = {self.state_timestep_counter}. Exp_State = {self.agent.exp_state}")
-
+        
         if(not self.exploration_time_calculated):
             self.state_timestep_counter = self.calculateExplorationTime() * FRAMES_PER_SEC
             self.exploration_time_calculated = True
@@ -142,135 +135,121 @@ class Processing():
                     break
             #End of exploration phase
             if(self.state_timestep_counter == 0):
-                #TODO check if current agent is in exploration state and polling state 
-                # Calculate distance of current agent to all other agent and if in range and other agent in dessimination state, get its 
-                #opinion, if different from current agent opinion, go undecided. 
-                #If our agent is undecided then get opinion of neighbor by majority rule
 
-                if(self.agent.exp_state == EXP_POLLING):
-                    agentList = self.agent.agents
-                    neighbourList = list()
-                    for a in agentList:
-                        if(a.state == STATE_DESSEMINATION):
-                            nXPos = a.body.rect.centerx
-                            nYPos = a.body.rect.centery
-                            eqDist = self.calculateEquladianDistance(positionX,nXPos,positonY,nYPos)
-                            if(eqDist < 150):
-                                neighbourList.append(a)
+                qi = min(1, (2*self.Ci)/self.Ti)
+                
+                if (self.Ci/self.Ti) >= 0.5:
+                    self.agent.Qi = 1
+                else:
+                    self.agent.Qi = qi
 
-                    if(len(neighbourList)!=0):
-                        cnt_op_A = 0
-                        cnt_op_B = 0
-                        cnt_undicided = 0
-                        final_opinion = -1
-                        for n in neighbourList:
-                            if(n.color_opinion == COMMITED_OPINION_A):
-                                cnt_op_A+=1
-                            if(n.color_opinion == COMMITED_OPINION_B):
-                                cnt_op_B+=1
-                            if(n.color_opinion == UNCOMMITED_OPTION):
-                                cnt_undicided+=1
-
-                        # we see the majority of these three values and take that as the opinion we want, if same cnt then choose randomly
-                        if(cnt_op_A > cnt_op_B and cnt_op_A > cnt_undicided):
-                            final_opinion = COMMITED_OPINION_A
-                        if(cnt_op_B > cnt_op_A and cnt_op_B > cnt_undicided):
-                            final_opinion = COMMITED_OPINION_B
-                        if(cnt_undicided > cnt_op_A and cnt_undicided > cnt_op_B):
-                            final_opinion = UNCOMMITED_OPTION
-                        if(cnt_op_A == cnt_op_B and cnt_op_A > cnt_undicided):
-                            final_opinion = np.random.choice([COMMITED_OPINION_A,COMMITED_OPINION_B])
-                        if(cnt_op_A == cnt_undicided and cnt_op_A > cnt_op_B):
-                            final_opinion = np.random.choice([COMMITED_OPINION_A,UNCOMMITED_OPTION])
-                        if(cnt_op_B == cnt_undicided and cnt_op_B > cnt_op_A):
-                            final_opinion = np.random.choice([COMMITED_OPINION_B,UNCOMMITED_OPTION])
-                        if(cnt_op_A == cnt_op_B and cnt_op_A == cnt_undicided):
-                            final_opinion == np.random.choice([COMMITED_OPINION_A,COMMITED_OPINION_B,UNCOMMITED_OPTION])
-                        
-                        prevOp = self.agent.color_opinion
-
-                        #If not same as self, become undecided
-                        if(self.agent.color_opinion != final_opinion and self.agent.color_opinion != UNCOMMITED_OPTION):
-                            print("Going uncommited")
-                            self.agent.color_opinion = UNCOMMITED_OPTION
-                        #if uncommided, take the majority opinion
-                        else:
-                            print("taking an opinion")
-                            self.agent.color_opinion = final_opinion
-
-                        print(f" for agent {self.agent.ID} Opinion Updated from {prevOp} to {self.agent.color_opinion}")
-
-
-                       
-
-
-                if(self.agent.exp_state == EXP_SELF_SOURCING):
-                    qi = min(1, (2*self.Ci)/self.Ti)
-                    # if(self.agent.ID == 1):
-                    #     print(f"Calculated qi = {qi} Ci = {self.Ci} Ti = {self.Ti}")
-                    if qi >= 0.5:
-                        self.agent.Qi = 1
-                    else:
-                        self.agent.Qi = qi
                 self.dessimation_time_calculated = False
                 self.exploration_time_calculated = True
                 self.visitedCellSet.clear()
                 self.Ti = 0
                 self.Ci = 0
-                self.agent.state = STATE_DESSEMINATION
+                self.agent.state = STATE_DISSEMINATION
                 
         
-        if(self.agent.state == STATE_DESSEMINATION):
+        if(self.agent.state == STATE_DISSEMINATION):
             self.state_timestep_counter -= 1
-            #TODO dessimination stuff
 
 
 
             #End of dessimation phase
             if(self.state_timestep_counter == 0):
                 #At the end of dessimination state robot decides to either go to polling or self sourcing
-                self.agent.exp_state = np.random.choice([EXP_SELF_SOURCING,EXP_POLLING],p=[PROBABILITY_N, 1 - PROBABILITY_N])
+                self.agent.exp_state = np.random.choice([EXP_SELF_SOURCING,EXP_POLLING],p=[PROBABILITY_NU, 1 - PROBABILITY_NU])
+
+                if(self.agent.exp_state == EXP_POLLING):
+                    agentList = self.agent.agents
+                    neighbourList = list()
+                    final_opinion = self.agent.color_opinion
+                    for a in agentList:
+                        #If robot is in dissemination state and is not uncommited then consider it for neighbpurhood calculation
+                        if(a.state == STATE_DISSEMINATION and a.color_opinion != UNCOMMITED_OPTION):
+                            nXPos = a.body.rect.centerx
+                            nYPos = a.body.rect.centery
+                            eqDist = self.calculateEquladianDistance(positionX,nXPos,positonY,nYPos)
+                            #when equladian distance lower than defined range, add to neighbour list
+                            if(eqDist < RANGE):
+                                neighbourList.append(a)
+
+                    
+                    if(len(neighbourList)!=0):
+                        print("neighbourhood size = ",len(neighbourList))
+                        
+
+                        if(self.agent.decision_mode == D_MAJORITY_RULE):
+                            print("Majority Rule switch")
+                            cnt_op_A = 0
+                            cnt_op_B = 0
+                            cnt_undicided = 0
+                            for n in neighbourList:
+                                if(n.color_opinion == COMMITED_OPINION_A):
+                                    cnt_op_A+=1
+                                if(n.color_opinion == COMMITED_OPINION_B):
+                                    cnt_op_B+=1
+                                # if(n.color_opinion == UNCOMMITED_OPTION):
+                                #     cnt_undicided+=1
+
+                            print(f"Count of neighbours: A= {cnt_op_A}. B={cnt_op_B}. Undicided={cnt_undicided}")
+                            if(cnt_op_A > cnt_op_B):
+                                final_opinion = COMMITED_OPINION_A
+                            if(cnt_op_B > cnt_op_A):
+                                final_opinion = COMMITED_OPINION_B
+                            if(cnt_op_A == cnt_op_B):
+                                final_opinion = UNCOMMITED_OPTION
+                        
+                    if(self.agent.decision_mode == D_DIRECT_SWITCH):
+                        print("Direct Vote Switch")
+                        filtered_agents = [a for a in self.agent.agents if a.state == STATE_DISSEMINATION and a.color_opinion!=UNCOMMITED_OPTION and a.ID != self.agent.ID]
+                        #print("filter agent = ",len(filtered_agents))
+                        if(len(filtered_agents)!=0):
+                            final_opinion = random.choice(filtered_agents).color_opinion
+                            # final_opinion = a.color_opinion
+                        else:
+                            final_opinion = self.agent.color_opinion
+                        
+                    prevOp = self.agent.color_opinion
+
+                    #If not same as self, become undecided
+                    if(self.agent.color_opinion != final_opinion and self.agent.color_opinion != UNCOMMITED_OPTION):
+                        #print("Going uncommited")
+                        self.agent.color_opinion = UNCOMMITED_OPTION
+                    #if uncommided, take the majority opinion
+                    else:
+                        #print("taking an opinion")
+                        self.agent.color_opinion = final_opinion
+
+                    print(f" for agent {self.agent.ID} Opinion Updated from {prevOp} to {self.agent.color_opinion}")
+
+
+                       
+
+
+                if(self.agent.exp_state == EXP_SELF_SOURCING):
+                    print("Self Sourcing")
+                    col=self.agent.environment.displaySurface.get_at((int(positionX) , math.ceil(positonY)+10))
+                    if(col[0] == 242): self.agent.color_opinion = 0
+                    else: self.agent.color_opinion = 1
+                
                 self.dessimation_time_calculated = True
                 self.exploration_time_calculated = False
                 self.agent.state = STATE_EXPLORATION
-
-        
-        
-
-
-
-              
-            
-
-            
-
 
             
         
         #Move Straight for 10 sec
         if(self.time_step_counter < FRAMES_PER_SEC * self.straightMoveDuration):
-            
-            # --- innate behaviour ---
-            self.innate.communicate()   
-            self.innate.explore()
-            self.innate.forage()
+            # --- innate behaviour ---  
+            self.innate.moveStraight()
             self.time_step_counter += 1
         else:
             self.innate.turn()
             self.time_step_counter = 0
             self.turn_timestep_counter = 0
             self.straightMovementTimeDetermined = False
-        
-        # --- learning procedure ---
-        #self.learning.rl_qLearning()
-        
-        
-    # def selfMonitoring(self):
-    #     # self-monitoring status
-    #     if(self.agent.nesting.communication.tokens): # if agent has tokens 
-    #         self.agent.processing.state["carries token"] = 1
-    #     else:
-    #         self.agent.processing.state["carries token"] = 0
     
     # Returns the color choice from the two colors
     def getColorOpinion(self,x):
@@ -283,15 +262,15 @@ class Processing():
         
     def calculateExplorationTime(self):
         if(self.agent.color_opinion == UNCOMMITED_OPTION):
-            return int(0.5 * 400 * 32 * 0.001)
+            return int(np.random.exponential(0.5 * 400 * 32 * 0.001))
         else:
-            return 100
+            return int(np.random.exponential(100))
 
     def calculateDessiminationTime(self):
         if(self.agent.color_opinion == UNCOMMITED_OPTION):
-            return int(0.5 * 400 * 32 * 0.001)
+            return int(np.random.exponential(0.5 * 400 * 32 * 0.001))
         else:
-            return int(self.agent.Qi * 1300 * 32 * 0.001)
+            return int(np.random.exponential(self.agent.Qi * 1300 * 32 * 0.001))
         
     def calculateEquladianDistance(self,x1,x2,y1,y2):
         return math.sqrt((x2-x1)**2 + (y2-y1)**2)

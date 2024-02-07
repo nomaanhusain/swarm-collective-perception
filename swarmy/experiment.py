@@ -49,6 +49,9 @@ class Experiment():
     
     def __init__(self):
         super(Experiment, self).__init__()
+        # TempPrinter = 0
+
+        # TempRobotId = 1 
 
         
     def run(self, numberOfAgents, rendering, measFolderPath, captFolderPath, xParams):
@@ -121,7 +124,7 @@ class Experiment():
                              environment, agentList, sourceList, sinkList, obstacleList, xParams, 
                              np.random.choice([COMMITED_OPINION_A,COMMITED_OPINION_B],p=[PERCENTAGE_COLOR_A, PERCENTAGE_COLOR_B]),
                              np.random.choice([EXP_SELF_SOURCING,EXP_POLLING],p=[PROBABILITY_NU, 1 - PROBABILITY_NU]),
-                             np.random.choice([D_DIRECT_SWITCH,D_MAJORITY_RULE],p=[D,1-D]))
+                             np.random.choice([D_VOTER_MODEL,D_MAJORITY_RULE],p=[D,1-D]))
             positonAvailable = not newAgent.perception.collisionSensor()
             if(positonAvailable):
                 count = count + 1
@@ -136,7 +139,7 @@ class Experiment():
                 cntOptAIntit+=1
             if a.color_opinion == COMMITED_OPINION_B:
                 cntOptBIntit+=1
-        print(f"Initial Opinion Proportion = {cntOptAIntit/cntOptBIntit}")
+        print(f"Initial A/B Opinion Split (q) = {cntOptAIntit/cntOptBIntit}")
         agentList[0].body.helperLUT()   # global lookup table needs to be calculated only once
 
         
@@ -151,6 +154,7 @@ class Experiment():
         locked = [False,False]   # needed to monitor the timesteps for specific events
         time_start = time.time() # simulation start time
         last_values = deque(maxlen=1000)
+        stoppper = 0 
         while running:
             timesteps_counter += 1        
             
@@ -170,12 +174,18 @@ class Experiment():
                     if a.color_opinion == UNCOMMITED_OPTION:
                         countU+=1
                 prop = (countA-countB)/(len(agentList) - countU)
+                stoppper+=1
                 last_values.append(prop)
-                print(f"Last Values Length = {len(last_values)}. Proportion = {prop}")
+                print("---------------------")
+                print(f"Count A = {countA}, Count B = {countB}, Uncommited = {countU}")
+                print(f"Time Step Count = {stoppper}. Proportion = {prop}")
+                print("---------------------")
 
-
+            # Stop the running code after 2000 timesteps
+            if(stoppper>2000): break
             # get the set of keys pressed and check for user input
             pressedKeys = pygame.key.get_pressed()
+
                        
             # handle user input
             for event in pygame.event.get():

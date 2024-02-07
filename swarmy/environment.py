@@ -47,7 +47,7 @@ class Environment():
         #self.BACKGROUND_COLOR = (255, 255, 255)    
         self.width = pygame.display.Info().current_w    # testbed width  // self.width = 500
         self.height = pygame.display.Info().current_h   # testbed height // self.height = 300
-        print(f"width = {self.width} and height =  {self.height}")
+        # print(f"width = {self.width} and height =  {self.height}")
         # init basic rendering surface
         if(rendering == 1):
             if(self.width == pygame.display.Info().current_w and self.height == pygame.display.Info().current_h):   # fullscreen size

@@ -33,6 +33,10 @@ class Processing():
     state_timestep_counter = 0
     exploration_time_calculated = False
     dessimation_time_calculated = True
+    temp_counter = 0
+    temp_counter_main = 0
+    temp_id=-1
+    justSwitched = False
     """
     In the processing object all computation procedures of an agent are represented.
     
@@ -91,11 +95,14 @@ class Processing():
         """
         Update agent processing for one timestep
         """
+        self.temp_counter+=1
+        if(self.temp_counter % FRAMES_PER_SEC == 0):
+            self.temp_counter_main+=1
+        if(self.temp_counter_main>650):
+            if(self.agent.color_opinion == UNCOMMITED_OPTION):
+                self.temp_id = self.agent.ID
 
-        
-        # control the agent with ID=1 via keyboard
-        #if(self.agent.ID == 1):
-        self.agent.actuation.processUserInput(pressedKeys)     
+             
         start_time = 0
         if not self.straightMovementTimeDetermined:
             self.straightMoveDuration = random.randrange(8,12)
@@ -105,14 +112,29 @@ class Processing():
         positionX = self.agent.body.rect.centerx
         positonY = self.agent.body.rect.centery
 
+        #Hotfix
+        if(self.state_timestep_counter < 0):
+            if(self.agent.state == STATE_EXPLORATION):
+                self.exploration_time_calculated = True
+                self.dessimation_time_calculated = False
+                self.justSwitched = False
+                self.agent.state = STATE_DISSEMINATION
+            if(self.agent.state == STATE_DISSEMINATION):
+                self.exploration_time_calculated = False
+                self.dessimation_time_calculated = True
+                self.agent.state = STATE_EXPLORATION
+
         
         if(not self.exploration_time_calculated):
             self.state_timestep_counter = self.calculateExplorationTime() * FRAMES_PER_SEC
             self.exploration_time_calculated = True
+            self.dessimation_time_calculated = True
         
         if(not self.dessimation_time_calculated):
             self.state_timestep_counter = self.calculateDessiminationTime() * FRAMES_PER_SEC
             self.dessimation_time_calculated = True
+            self.exploration_time_calculated = True
+            self.justSwitched =False
         #When in exploration state
         if(self.agent.state == STATE_EXPLORATION):
             self.state_timestep_counter -= 1
@@ -149,11 +171,11 @@ class Processing():
                 self.Ti = 0
                 self.Ci = 0
                 self.agent.state = STATE_DISSEMINATION
+                self.justSwitched = True
                 
         
-        if(self.agent.state == STATE_DISSEMINATION):
+        if(self.agent.state == STATE_DISSEMINATION and not self.justSwitched):
             self.state_timestep_counter -= 1
-
 
 
             #End of dessimation phase
@@ -177,11 +199,11 @@ class Processing():
 
                     
                     if(len(neighbourList)!=0):
-                        print("neighbourhood size = ",len(neighbourList))
+                        # print("neighbourhood size = ",len(neighbourList))
                         
 
                         if(self.agent.decision_mode == D_MAJORITY_RULE):
-                            print("Majority Rule switch")
+                            # print("Majority Rule switch")
                             cnt_op_A = 0
                             cnt_op_B = 0
                             cnt_undicided = 0
@@ -190,10 +212,8 @@ class Processing():
                                     cnt_op_A+=1
                                 if(n.color_opinion == COMMITED_OPINION_B):
                                     cnt_op_B+=1
-                                # if(n.color_opinion == UNCOMMITED_OPTION):
-                                #     cnt_undicided+=1
 
-                            print(f"Count of neighbours: A= {cnt_op_A}. B={cnt_op_B}. Undicided={cnt_undicided}")
+                            # print(f"Count of neighbours: A= {cnt_op_A}. B={cnt_op_B}. Undicided={cnt_undicided}")
                             if(cnt_op_A > cnt_op_B):
                                 final_opinion = COMMITED_OPINION_A
                             if(cnt_op_B > cnt_op_A):
@@ -201,13 +221,11 @@ class Processing():
                             if(cnt_op_A == cnt_op_B):
                                 final_opinion = UNCOMMITED_OPTION
                         
-                    if(self.agent.decision_mode == D_DIRECT_SWITCH):
-                        print("Direct Vote Switch")
+                    if(self.agent.decision_mode == D_VOTER_MODEL):
+                        # print("Direct Vote Switch")
                         filtered_agents = [a for a in self.agent.agents if a.state == STATE_DISSEMINATION and a.color_opinion!=UNCOMMITED_OPTION and a.ID != self.agent.ID]
-                        #print("filter agent = ",len(filtered_agents))
                         if(len(filtered_agents)!=0):
                             final_opinion = random.choice(filtered_agents).color_opinion
-                            # final_opinion = a.color_opinion
                         else:
                             final_opinion = self.agent.color_opinion
                         
@@ -215,14 +233,14 @@ class Processing():
 
                     #If not same as self, become undecided
                     if(self.agent.color_opinion != final_opinion and self.agent.color_opinion != UNCOMMITED_OPTION):
-                        #print("Going uncommited")
+                        # print("Going uncommited from majority opinion")
                         self.agent.color_opinion = UNCOMMITED_OPTION
                     #if uncommided, take the majority opinion
                     else:
-                        #print("taking an opinion")
+                        # print("taking an opinion")
                         self.agent.color_opinion = final_opinion
 
-                    print(f" for agent {self.agent.ID} Opinion Updated from {prevOp} to {self.agent.color_opinion}")
+                    # print(f"For agent {self.agent.ID} Opinion Updated from {prevOp} to {self.agent.color_opinion}")
 
 
                        
@@ -231,7 +249,7 @@ class Processing():
                 if(self.agent.exp_state == EXP_SELF_SOURCING):
                     print("Self Sourcing")
                     col=self.agent.environment.displaySurface.get_at((int(positionX) , math.ceil(positonY)+10))
-                    if(col[0] == 242): self.agent.color_opinion = 0
+                    if(col[0] == 242): self.agent.color_opinion = 0 #Bit hard coding here, maybe fix
                     else: self.agent.color_opinion = 1
                 
                 self.dessimation_time_calculated = True
@@ -240,7 +258,7 @@ class Processing():
 
             
         
-        #Move Straight for 10 sec
+        #Move Straight
         if(self.time_step_counter < FRAMES_PER_SEC * self.straightMoveDuration):
             # --- innate behaviour ---  
             self.innate.moveStraight()
@@ -258,6 +276,7 @@ class Processing():
         if(x == (48,138,255)):
             return 1
         else:
+            #Just for compleness, should never happen
             return -1
         
     def calculateExplorationTime(self):
